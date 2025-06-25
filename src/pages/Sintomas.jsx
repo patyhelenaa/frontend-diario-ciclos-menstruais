@@ -1,70 +1,12 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import api from '../services/api';
 
 function Sintomas() {
   const [currentPage, setCurrentPage] = useState(0);
-  const [sintomas, setSintomas] = useState([
-    {
-      id: 1,
-      data: '15/03/2024',
-      tipo: 'Físico',
-      intensidade: 'MUITO_INTENSO',
-      nome_sintoma: 'Cólicas',
-      remedio_tomado: 'Ibuprofeno',
-      pratica: true,
-      descricao: 'Cólicas intensas no primeiro dia'
-    },
-    {
-      id: 2,
-      data: '14/03/2024',
-      tipo: 'Humor',
-      intensidade: 'INTENSO',
-      nome_sintoma: 'Irritação',
-      humor: 'IRRITACAO',
-      gatilho: 'Estresse no trabalho',
-      descricao: 'Muito irritada com pequenas coisas'
-    },
-    {
-      id: 3,
-      data: '13/03/2024',
-      tipo: 'Físico',
-      intensidade: 'MODERADO',
-      nome_sintoma: 'Fadiga',
-      remedio_tomado: '',
-      pratica: false,
-      descricao: 'Cansada durante o dia'
-    },
-    {
-      id: 4,
-      data: '12/03/2024',
-      tipo: 'Libido',
-      intensidade: 'LEVE',
-      nome_sintoma: 'Alteração na libido',
-      relacoes_com_parceiro: true,
-      relacoes_sem_parceiro: false,
-      descricao: 'Aumento no desejo sexual'
-    },
-    {
-      id: 5,
-      data: '11/03/2024',
-      tipo: 'Secreção',
-      intensidade: 'MODERADO',
-      nome_sintoma: 'Secreção vaginal',
-      textura: 'CREMOSA',
-      remedio_tomado: '',
-      descricao: 'Secreção normal do ciclo'
-    },
-    {
-      id: 6,
-      data: '10/03/2024',
-      tipo: 'Humor',
-      intensidade: 'LEVE',
-      nome_sintoma: 'Ansiedade',
-      humor: 'ANSIEDADE',
-      gatilho: 'Preparação para reunião',
-      descricao: 'Ansiedade leve antes de eventos'
-    }
-  ]);
+  const [sintomas, setSintomas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [showNewSintomaModal, setShowNewSintomaModal] = useState(false);
   const [newSintomaData, setNewSintomaData] = useState({
@@ -81,8 +23,90 @@ function Sintomas() {
     relacoes_com_parceiro: false,
     relacoes_sem_parceiro: false
   });
-
   const [editSintomaId, setEditSintomaId] = useState(null);
+
+  const [choices, setChoices] = useState({
+    intensidade: [
+      { key: 'LEVE', label: 'Leve' },
+      { key: 'MODERADO', label: 'Moderado' },
+      { key: 'INTENSO', label: 'Intenso' },
+      { key: 'MUITO_INTENSO', label: 'Muito Intenso' }
+    ],
+    humor: [
+      { key: 'FELICIDADE', label: 'Felicidade' },
+      { key: 'TRISTEZA', label: 'Tristeza' },
+      { key: 'IRRITACAO', label: 'Irritação' },
+      { key: 'ANSIEDADE', label: 'Ansiedade' }
+    ],
+    textura_secrecao: [
+      { key: 'AQUOSA', label: 'Aquosa' },
+      { key: 'CREMOSA', label: 'Cremosa' },
+      { key: 'ELASTICA', label: 'Elástica' },
+      { key: 'PEGAJOSA', label: 'Pegajosa' }
+    ]
+  });
+
+  const [ciclos, setCiclos] = useState([]);
+  const [cicloIdToData, setCicloIdToData] = useState({});
+
+  // Buscar sintomas do backend ao carregar
+  useEffect(() => {
+    async function fetchSintomas() {
+      setLoading(true);
+      setError('');
+      try {
+        const resFisico = await api.get('/api/fisico/');
+        const resHumor = await api.get('/api/humor/');
+        const resLibido = await api.get('/api/libido/');
+        const resSecrecao = await api.get('/api/secrecao/');
+        // Unifica e ordena por data decrescente
+        const all = [
+          ...resFisico.data.map(s => ({ ...s, tipo: 'Físico' })),
+          ...resHumor.data.map(s => ({ ...s, tipo: 'Humor' })),
+          ...resLibido.data.map(s => ({ ...s, tipo: 'Libido' })),
+          ...resSecrecao.data.map(s => ({ ...s, tipo: 'Secreção' })),
+        ];
+        all.sort((a, b) => new Date(b.data) - new Date(a.data));
+        setSintomas(all);
+      } catch (err) {
+        setError('Erro ao buscar sintomas.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSintomas();
+  }, []);
+
+  // Buscar ciclos do backend ao carregar
+  useEffect(() => {
+    async function fetchCiclos() {
+      try {
+        const res = await api.get('/api/ciclos/');
+        setCiclos(res.data);
+        // Monta o mapa id -> data
+        const mapa = {};
+        res.data.forEach(ciclo => {
+          mapa[ciclo.id] = ciclo.data;
+        });
+        setCicloIdToData(mapa);
+      } catch (err) {
+        // Não faz nada, sintomas ainda funcionam
+      }
+    }
+    fetchCiclos();
+  }, []);
+
+  useEffect(() => {
+    async function fetchChoices() {
+      try {
+        const res = await api.get('/api/sintomas/choices/');
+        setChoices(res.data);
+      } catch (err) {
+        // fallback para os valores fixos
+      }
+    }
+    fetchChoices();
+  }, []);
 
   const sintomasPerPage = 3;
   const totalPages = Math.ceil(sintomas.length / sintomasPerPage);
@@ -109,10 +133,21 @@ function Sintomas() {
     setShowNewSintomaModal(true);
   };
 
-  const handleDeleteSintoma = (id) => {
+  const handleDeleteSintoma = async (id) => {
+    const sintoma = sintomas.find(s => s.id === id);
+    let endpoint = '';
+    if (sintoma.tipo === 'Físico') endpoint = '/api/fisico/';
+    else if (sintoma.tipo === 'Humor') endpoint = '/api/humor/';
+    else if (sintoma.tipo === 'Libido') endpoint = '/api/libido/';
+    else if (sintoma.tipo === 'Secreção') endpoint = '/api/secrecao/';
     if (window.confirm('Tem certeza que deseja excluir este sintoma?')) {
-      setSintomas(sintomas.filter(sintoma => sintoma.id !== id));
-      console.log('Excluindo sintoma:', id);
+      try {
+        await api.delete(`${endpoint}${id}/`);
+        setSintomas(sintomas.filter(sintoma => sintoma.id !== id));
+        console.log('Excluindo sintoma:', id);
+      } catch (err) {
+        setError('Erro ao excluir sintoma.');
+      }
     }
   };
 
@@ -120,59 +155,80 @@ function Sintomas() {
     setShowNewSintomaModal(true);
   };
 
-  const handleSaveNewSintoma = () => {
-    // Montar objeto só com os campos relevantes
-    const base = {
-      id: editSintomaId ? editSintomaId : Date.now(),
-      data: newSintomaData.data,
-      tipo: newSintomaData.tipo,
-      intensidade: newSintomaData.intensidade,
-      nome_sintoma: newSintomaData.nome_sintoma,
-      descricao: newSintomaData.descricao
-    };
-    let extra = {};
-    if (newSintomaData.tipo === 'Físico') {
-      extra = {
-        pratica: newSintomaData.pratica,
-        remedio_tomado: newSintomaData.remedio_tomado
+  const handleSaveNewSintoma = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const base = {
+        data: newSintomaData.data,
+        tipo: newSintomaData.tipo,
+        intensidade: newSintomaData.intensidade,
+        nome_sintoma: newSintomaData.nome_sintoma,
+        descricao: newSintomaData.descricao
       };
-    } else if (newSintomaData.tipo === 'Humor') {
-      extra = {
-        humor: newSintomaData.humor,
-        gatilho: newSintomaData.gatilho
-      };
-    } else if (newSintomaData.tipo === 'Libido') {
-      extra = {
-        relacoes_com_parceiro: newSintomaData.relacoes_com_parceiro,
-        relacoes_sem_parceiro: newSintomaData.relacoes_sem_parceiro
-      };
-    } else if (newSintomaData.tipo === 'Secreção') {
-      extra = {
-        textura: newSintomaData.textura,
-        remedio_tomado: newSintomaData.remedio_tomado
-      };
+      let extra = {};
+      let endpoint = '';
+      if (newSintomaData.tipo === 'Físico') {
+        extra = {
+          pratica: newSintomaData.pratica,
+          remedio_tomado: newSintomaData.remedio_tomado
+        };
+        endpoint = '/api/fisico/';
+      } else if (newSintomaData.tipo === 'Humor') {
+        extra = {
+          humor: newSintomaData.humor,
+          gatilho: newSintomaData.gatilho
+        };
+        endpoint = '/api/humor/';
+      } else if (newSintomaData.tipo === 'Libido') {
+        extra = {
+          relacoes_com_parceiro: newSintomaData.relacoes_com_parceiro,
+          relacoes_sem_parceiro: newSintomaData.relacoes_sem_parceiro
+        };
+        endpoint = '/api/libido/';
+      } else if (newSintomaData.tipo === 'Secreção') {
+        extra = {
+          textura: newSintomaData.textura,
+          remedio_tomado: newSintomaData.remedio_tomado
+        };
+        endpoint = '/api/secrecao/';
+      }
+      if (editSintomaId) {
+        await api.put(`${endpoint}${editSintomaId}/`, { ...base, ...extra });
+      } else {
+        await api.post(endpoint, { ...base, ...extra });
+      }
+      setSintomas(prevSintomas => {
+        const newSintomas = [...prevSintomas];
+        if (editSintomaId) {
+          const index = newSintomas.findIndex(s => s.id === editSintomaId);
+          newSintomas[index] = { ...newSintomas[index], ...base, ...extra };
+        } else {
+          newSintomas.unshift({ ...base, ...extra });
+        }
+        return newSintomas.sort((a, b) => new Date(b.data) - new Date(a.data));
+      });
+      setShowNewSintomaModal(false);
+      setEditSintomaId(null);
+      setNewSintomaData({
+        data: '',
+        tipo: 'Físico',
+        intensidade: 'MODERADO',
+        nome_sintoma: '',
+        descricao: '',
+        remedio_tomado: '',
+        pratica: false,
+        humor: 'FELICIDADE',
+        gatilho: '',
+        textura: 'AQUOSA',
+        relacoes_com_parceiro: false,
+        relacoes_sem_parceiro: false
+      });
+    } catch (err) {
+      setError('Erro ao salvar sintoma.');
+    } finally {
+      setLoading(false);
     }
-    if (editSintomaId) {
-      setSintomas(sintomas.map(s => s.id === editSintomaId ? { ...base, ...extra } : s));
-    } else {
-      setSintomas([{ ...base, ...extra }, ...sintomas]);
-    }
-    setShowNewSintomaModal(false);
-    setEditSintomaId(null);
-    setNewSintomaData({
-      data: '',
-      tipo: 'Físico',
-      intensidade: 'MODERADO',
-      nome_sintoma: '',
-      descricao: '',
-      remedio_tomado: '',
-      pratica: false,
-      humor: 'FELICIDADE',
-      gatilho: '',
-      textura: 'AQUOSA',
-      relacoes_com_parceiro: false,
-      relacoes_sem_parceiro: false
-    });
   };
 
   const handleCancelNewSintoma = () => {
@@ -297,32 +353,44 @@ function Sintomas() {
 
               {/* Cards */}
               <div className="sintomas-cards">
-                {currentSintomas.map((sintoma) => (
-                  <div key={sintoma.id} className="sintomas-card">
-                    <h3 className="sintomas-card-title">
-                      {sintoma.data}
-                    </h3>
-                    <div className="sintomas-card-content">
-                      <p>• Tipo: <span className="value">{sintoma.tipo}</span></p>
-                      <p>• Sintoma: <span className="value">{sintoma.nome_sintoma}</span></p>
-                      {renderSintomaContent(sintoma)}
+                {loading ? (
+                  <p>Carregando sintomas...</p>
+                ) : error ? (
+                  <p style={{ color: 'red' }}>{error}</p>
+                ) : currentSintomas.length === 0 ? (
+                  <p>Nenhum sintoma encontrado. Adicione um novo!</p>
+                ) : (
+                  currentSintomas.map((sintoma) => (
+                    <div key={sintoma.id} className="sintomas-card">
+                      <h3 className="sintomas-card-title">
+                        {sintoma.data}
+                      </h3>
+                      <div className="sintomas-card-content">
+                        {/* Exibe a data de início do ciclo associado, se disponível */}
+                        {sintoma.ciclo && cicloIdToData[sintoma.ciclo] && (
+                          <p>• Do ciclo: iniciado em <span className="value">{cicloIdToData[sintoma.ciclo]}</span></p>
+                        )}
+                        <p>• Tipo: <span className="value">{sintoma.tipo}</span></p>
+                        <p>• Sintoma: <span className="value">{sintoma.nome_sintoma}</span></p>
+                        {renderSintomaContent(sintoma)}
+                      </div>
+                      <div className="sintomas-card-actions">
+                        <button 
+                          className="sintomas-action-btn sintomas-action-btn--edit"
+                          onClick={() => handleEditSintoma(sintoma.id)}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          className="sintomas-action-btn sintomas-action-btn--delete"
+                          onClick={() => handleDeleteSintoma(sintoma.id)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </div>
-                    <div className="sintomas-card-actions">
-                      <button 
-                        className="sintomas-action-btn sintomas-action-btn--edit"
-                        onClick={() => handleEditSintoma(sintoma.id)}
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        className="sintomas-action-btn sintomas-action-btn--delete"
-                        onClick={() => handleDeleteSintoma(sintoma.id)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {/* Seta direita */}
@@ -378,10 +446,9 @@ function Sintomas() {
                     value={newSintomaData.intensidade}
                     onChange={(e) => setNewSintomaData({...newSintomaData, intensidade: e.target.value})}
                   >
-                    <option value="LEVE">Leve</option>
-                    <option value="MODERADO">Moderado</option>
-                    <option value="INTENSO">Intenso</option>
-                    <option value="MUITO_INTENSO">Muito Intenso</option>
+                    {choices.intensidade.map(choice => (
+                      <option key={choice.key} value={choice.key}>{choice.label}</option>
+                    ))}
                   </select>
                 </div>
                 {/* Campos dinâmicos por tipo */}
@@ -415,10 +482,9 @@ function Sintomas() {
                         value={newSintomaData.humor}
                         onChange={e => setNewSintomaData({...newSintomaData, humor: e.target.value})}
                       >
-                        <option value="FELICIDADE">Felicidade</option>
-                        <option value="TRISTEZA">Tristeza</option>
-                        <option value="IRRITACAO">Irritação</option>
-                        <option value="ANSIEDADE">Ansiedade</option>
+                        {choices.humor.map(choice => (
+                          <option key={choice.key} value={choice.key}>{choice.label}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="sintomas-field">
@@ -463,10 +529,9 @@ function Sintomas() {
                         value={newSintomaData.textura}
                         onChange={e => setNewSintomaData({...newSintomaData, textura: e.target.value})}
                       >
-                        <option value="AQUOSA">Aquosa</option>
-                        <option value="CREMOSA">Cremosa</option>
-                        <option value="ELASTICA">Elástica</option>
-                        <option value="PEGAJOSA">Pegajosa</option>
+                        {choices.textura_secrecao.map(choice => (
+                          <option key={choice.key} value={choice.key}>{choice.label}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="sintomas-field">
@@ -488,11 +553,11 @@ function Sintomas() {
                   />
                 </div>
                 <div className="sintomas-modal-actions">
-                  <button className="sintomas-btn sintomas-btn--save" onClick={handleSaveNewSintoma}>
-                    Salvar
+                  <button className="sintomas-btn sintomas-btn--save" onClick={handleSaveNewSintoma} disabled={loading}>
+                    {loading ? 'Salvando...' : 'Salvar'}
                   </button>
-                  <button className="sintomas-btn sintomas-btn--cancel" onClick={handleCancelNewSintoma}>
-                    Cancelar
+                  <button className="sintomas-btn sintomas-btn--cancel" onClick={handleCancelNewSintoma} disabled={loading}>
+                    {loading ? 'Cancelando...' : 'Cancelar'}
                   </button>
                 </div>
               </div>
