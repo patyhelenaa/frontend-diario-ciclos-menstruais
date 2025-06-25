@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+
+.ciclos-card-content .value,
+.sintomas-card-content .value,
+span.value {
+  font-weight: bold !important;
+  color: #222 !important;
+}

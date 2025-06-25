@@ -1291,3 +1291,7 @@ body, html {
 .error-btn:hover {
   background: #d63384;
 }
+.value {
+  font-weight: bold !important;
+  color: #222 !important;
+}
