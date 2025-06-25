@@ -1,62 +1,46 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import api from '../services/api';
 
 function Ciclos() {
   const [currentPage, setCurrentPage] = useState(0);
-  const [ciclos, setCiclos] = useState([
-    {
-      id: 1,
-      dataInicio: '15/03/2024',
-      duracaoCiclo: 28,
-      duracaoMenstruacao: 5,
-      fluxo: 'Moderado'
-    },
-    {
-      id: 2,
-      dataInicio: '12/02/2024',
-      duracaoCiclo: 30,
-      duracaoMenstruacao: 6,
-      fluxo: 'Intenso'
-    },
-    {
-      id: 3,
-      dataInicio: '13/01/2024',
-      duracaoCiclo: 27,
-      duracaoMenstruacao: 4,
-      fluxo: 'Leve'
-    },
-    {
-      id: 4,
-      dataInicio: '17/12/2023',
-      duracaoCiclo: 29,
-      duracaoMenstruacao: 5,
-      fluxo: 'Moderado'
-    },
-    {
-      id: 5,
-      dataInicio: '18/11/2023',
-      duracaoCiclo: 28,
-      duracaoMenstruacao: 6,
-      fluxo: 'Intenso'
-    },
-    {
-      id: 6,
-      dataInicio: '21/10/2023',
-      duracaoCiclo: 31,
-      duracaoMenstruacao: 5,
-      fluxo: 'Leve'
-    }
-  ]);
+  const [ciclos, setCiclos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [showNewCycleModal, setShowNewCycleModal] = useState(false);
   const [newCycleData, setNewCycleData] = useState({
     dataInicio: '',
     duracaoCiclo: '',
     duracaoMenstruacao: '',
-    fluxo: 'Moderado'
+    fluxo: 'MODERADO' // valor correto para o backend
   });
-
   const [editCycleId, setEditCycleId] = useState(null);
+
+  // Buscar ciclos do backend ao carregar
+  useEffect(() => {
+    async function fetchCiclos() {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await api.get('/api/ciclos/');
+        // Mapeia os campos do backend para o frontend
+        const ciclosConvertidos = res.data.map(ciclo => ({
+          id: ciclo.id,
+          dataInicio: ciclo.data, // backend -> frontend
+          duracaoCiclo: ciclo.duracao_ciclo,
+          duracaoMenstruacao: ciclo.duracao_menstruacao,
+          fluxo: ciclo.fluxo_menstrual
+        }));
+        setCiclos(ciclosConvertidos);
+      } catch (err) {
+        setError('Erro ao buscar ciclos.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCiclos();
+  }, []);
 
   const ciclosPerPage = 3;
   const totalPages = Math.ceil(ciclos.length / ciclosPerPage);
@@ -88,10 +72,14 @@ function Ciclos() {
     setShowNewCycleModal(true);
   };
 
-  const handleDeleteCiclo = (id) => {
+  const handleDeleteCiclo = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir este ciclo?')) {
-      setCiclos(ciclos.filter(ciclo => ciclo.id !== id));
-      console.log('Excluindo ciclo:', id);
+      try {
+        await api.delete(`/api/ciclos/${id}/`);
+        setCiclos(ciclos.filter(ciclo => ciclo.id !== id));
+      } catch (err) {
+        setError('Erro ao excluir ciclo.');
+      }
     }
   };
 
@@ -99,26 +87,38 @@ function Ciclos() {
     setShowNewCycleModal(true);
   };
 
-  const handleSaveNewCycle = () => {
-    if (editCycleId) {
-      // Edição
-      setCiclos(ciclos.map(c => c.id === editCycleId ? { ...c, ...newCycleData } : c));
-    } else {
-      // Criação
-      const newCiclo = {
-        id: Date.now(),
-        ...newCycleData
+  const handleSaveNewCycle = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // Mapeia os campos para o formato esperado pelo backend
+      const cicloPayload = {
+        data: newCycleData.dataInicio,
+        dia_menstruada: true, // ajuste se for editável
+        duracao_ciclo: newCycleData.duracaoCiclo,
+        duracao_menstruacao: newCycleData.duracaoMenstruacao,
+        fluxo_menstrual: newCycleData.fluxo
       };
-      setCiclos([newCiclo, ...ciclos]);
+      if (editCycleId) {
+        await api.put(`/api/ciclos/${editCycleId}/`, cicloPayload);
+        setCiclos(ciclos.map(c => c.id === editCycleId ? { ...c, ...newCycleData } : c));
+      } else {
+        const res = await api.post('/api/ciclos/', cicloPayload);
+        setCiclos([res.data, ...ciclos]);
+      }
+      setShowNewCycleModal(false);
+      setEditCycleId(null);
+      setNewCycleData({
+        dataInicio: '',
+        duracaoCiclo: '',
+        duracaoMenstruacao: '',
+        fluxo: 'MODERADO'
+      });
+    } catch (err) {
+      setError('Erro ao salvar ciclo.');
+    } finally {
+      setLoading(false);
     }
-    setShowNewCycleModal(false);
-    setEditCycleId(null);
-    setNewCycleData({
-      dataInicio: '',
-      duracaoCiclo: '',
-      duracaoMenstruacao: '',
-      fluxo: 'Moderado'
-    });
   };
 
   const handleCancelNewCycle = () => {
@@ -128,7 +128,7 @@ function Ciclos() {
       dataInicio: '',
       duracaoCiclo: '',
       duracaoMenstruacao: '',
-      fluxo: 'Moderado'
+      fluxo: 'MODERADO'
     });
   };
 
@@ -151,10 +151,7 @@ function Ciclos() {
           {/* Seção de ciclos recentes */}
           <div className="ciclos-section">
             <h2 className="ciclos-section-title">Meus ciclos recentes</h2>
-            
-            {/* Cards de ciclos */}
             <div className="ciclos-cards-container">
-              {/* Seta esquerda */}
               {currentPage > 0 && (
                 <button 
                   className="ciclos-nav-btn ciclos-nav-btn--prev"
@@ -163,38 +160,42 @@ function Ciclos() {
                   ←
                 </button>
               )}
-
-              {/* Cards */}
               <div className="ciclos-cards">
-                {currentCiclos.map((ciclo) => (
-                  <div key={ciclo.id} className="ciclos-card">
-                    <h3 className="ciclos-card-title">
-                      Iniciado em {ciclo.dataInicio}
-                    </h3>
-                    <div className="ciclos-card-content">
-                      <p>• Duração do ciclo: <span className="value">{ciclo.duracaoCiclo}</span> dias</p>
-                      <p>• Duração da menstruação: <span className="value">{ciclo.duracaoMenstruacao}</span> dias</p>
-                      <p>• Fluxo: <span className="value">{ciclo.fluxo}</span></p>
+                {loading ? (
+                  <p>Carregando ciclos...</p>
+                ) : error ? (
+                  <p style={{ color: 'red' }}>{error}</p>
+                ) : currentCiclos.length === 0 ? (
+                  <p>Nenhum ciclo encontrado. Adicione um novo!</p>
+                ) : (
+                  currentCiclos.map((ciclo) => (
+                    <div key={ciclo.id} className="ciclos-card">
+                      <h3 className="ciclos-card-title">
+                        Iniciado em {ciclo.dataInicio}
+                      </h3>
+                      <div className="ciclos-card-content">
+                        <p>• Duração do ciclo: <span className="value">{ciclo.duracaoCiclo}</span> dias</p>
+                        <p>• Duração da menstruação: <span className="value">{ciclo.duracaoMenstruacao}</span> dias</p>
+                        <p>• Fluxo: <span className="value">{ciclo.fluxo}</span></p>
+                      </div>
+                      <div className="ciclos-card-actions">
+                        <button 
+                          className="ciclos-action-btn ciclos-action-btn--edit"
+                          onClick={() => handleEditCiclo(ciclo.id)}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          className="ciclos-action-btn ciclos-action-btn--delete"
+                          onClick={() => handleDeleteCiclo(ciclo.id)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </div>
-                    <div className="ciclos-card-actions">
-                      <button 
-                        className="ciclos-action-btn ciclos-action-btn--edit"
-                        onClick={() => handleEditCiclo(ciclo.id)}
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        className="ciclos-action-btn ciclos-action-btn--delete"
-                        onClick={() => handleDeleteCiclo(ciclo.id)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
-
-              {/* Seta direita */}
               {currentPage < totalPages - 1 && (
                 <button 
                   className="ciclos-nav-btn ciclos-nav-btn--next"
@@ -206,8 +207,6 @@ function Ciclos() {
             </div>
           </div>
         </div>
-
-        {/* Modal para novo ciclo */}
         {showNewCycleModal && (
           <div className="ciclos-modal">
             <div className="ciclos-modal-content">
@@ -243,18 +242,18 @@ function Ciclos() {
                     value={newCycleData.fluxo}
                     onChange={(e) => setNewCycleData({...newCycleData, fluxo: e.target.value})}
                   >
-                    <option value="Leve">Leve</option>
-                    <option value="Moderado">Moderado</option>
-                    <option value="Intenso">Intenso</option>
-                    <option value="Muito Intenso">Muito Intenso</option>
+                    <option value="LEVE">Leve</option>
+                    <option value="MODERADO">Moderado</option>
+                    <option value="INTENSO">Intenso</option>
+                    <option value="MUITO_INTENSO">Muito Intenso</option>
                   </select>
                 </div>
                 <div className="ciclos-modal-actions">
-                  <button className="ciclos-btn ciclos-btn--save" onClick={handleSaveNewCycle}>
-                    Salvar
+                  <button className="ciclos-btn ciclos-btn--save" onClick={handleSaveNewCycle} disabled={loading}>
+                    {loading ? 'Salvando...' : 'Salvar'}
                   </button>
-                  <button className="ciclos-btn ciclos-btn--cancel" onClick={handleCancelNewCycle}>
-                    Cancelar
+                  <button className="ciclos-btn ciclos-btn--cancel" onClick={handleCancelNewCycle} disabled={loading}>
+                    {loading ? 'Cancelando...' : 'Cancelar'}
                   </button>
                 </div>
               </div>
