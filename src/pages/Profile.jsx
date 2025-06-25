@@ -4,47 +4,96 @@ import Header from '../components/Header';
 import gotinha from '../assets/gotinha-removebg-preview.png';
 import calendario from '../assets/calendario-removebg-preview.png';
 import bolinha from '../assets/bolinha-removebg-preview.png';
+import api from '../services/api';
 
 function Profile() {
   const [userData, setUserData] = useState({
-    nome: 'Maria Silva',
-    username: 'mariasilva',
-    email: 'maria@email.com',
-    data_nascimento: '1995-03-15',
-    peso: 65.5
+    nome: '',
+    username: '',
+    email: '',
+    data_nascimento: '',
+    peso: ''
   });
-
   const [cycleData, setCycleData] = useState({
     ultimoCiclo: {
-      diasAtras: 28,
-      duracaoMenstruacao: 5,
-      fluxo: 'Moderado'
+      diasAtras: '-',
+      duracaoMenstruacao: '-',
+      fluxo: '-'
     },
     previsaoProximo: {
-      diasParaProximo: 13,
-      duracaoCicloAproximada: 28,
-      duracaoMenstruacaoAproximada: 5
+      diasParaProximo: '-',
+      duracaoCicloAproximada: '-',
+      duracaoMenstruacaoAproximada: '-'
     },
     duracaoMedia: {
-      duracaoCiclo: 28,
-      duracaoMenstruacao: 5
+      duracaoCiclo: '-',
+      duracaoMenstruacao: '-'
     }
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Aqui você faria a chamada para a API para buscar os dados do usuário
-    // e os dados dos ciclos
-    console.log('Carregando dados do perfil...');
-    
-    // Simular login para teste
-    if (!localStorage.getItem('token')) {
-      localStorage.setItem('token', 'test-token');
-      localStorage.setItem('user', JSON.stringify({ nome: 'Maria Silva' }));
+    async function fetchProfile() {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await api.get('/api/usuarios/me/');
+        setUserData({
+          nome: res.data.profile.nome,
+          username: res.data.username,
+          email: res.data.email,
+          data_nascimento: res.data.profile.data_nascimento,
+          peso: res.data.profile.peso
+        });
+      } catch (err) {
+        setError('Erro ao buscar dados do perfil.');
+      } finally {
+        setLoading(false);
+      }
     }
+    async function fetchCiclosStats() {
+      try {
+        // Último ciclo
+        const resUltimo = await api.get('/api/ciclos/ultimo/');
+        const ultimo = resUltimo.data;
+        // Previsão próximo ciclo
+        const resPrevisao = await api.get('/api/ciclos/previsao/');
+        // Duração média
+        const resDuracao = await api.get('/api/ciclos/duracao_media/');
+        // Dias atrás do último ciclo
+        let diasAtras = '-';
+        if (ultimo && ultimo.data) {
+          diasAtras = Math.ceil((new Date() - new Date(ultimo.data)) / (1000 * 60 * 60 * 24));
+        }
+        setCycleData({
+          ultimoCiclo: {
+            diasAtras,
+            duracaoMenstruacao: ultimo.duracao_menstruacao,
+            fluxo: ultimo.fluxo_menstrual
+          },
+          previsaoProximo: {
+            diasParaProximo: resPrevisao.data.data_previsao
+              ? Math.max(0, Math.ceil((new Date(resPrevisao.data.data_previsao) - new Date()) / (1000 * 60 * 60 * 24)))
+              : '-',
+            duracaoCicloAproximada: resPrevisao.data.duracao_media || '-',
+            duracaoMenstruacaoAproximada: ultimo.duracao_menstruacao || '-'
+          },
+          duracaoMedia: {
+            duracaoCiclo: resDuracao.data.duracao_media || '-',
+            duracaoMenstruacao: resDuracao.data.duracao_media_menstruacao || '-'
+          }
+        });
+      } catch (err) {
+        console.log('ERRO AO BUSCAR ESTATÍSTICAS:', err); // <-- debug
+        // Não mostra erro, só não preenche os cards
+      }
+    }
+    fetchProfile();
+    fetchCiclosStats();
   }, []);
 
   const handleEdit = () => {
@@ -52,11 +101,25 @@ function Profile() {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    setUserData(editData);
-    setIsEditing(false);
-    // Aqui você faria a chamada para a API para salvar os dados
-    console.log('Salvando dados do perfil...', editData);
+  const handleSave = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await api.put('/api/usuarios/me/', {
+        email: editData.email,
+        profile: {
+          nome: editData.nome,
+          data_nascimento: editData.data_nascimento,
+          peso: editData.peso
+        }
+      });
+      setUserData(editData);
+      setIsEditing(false);
+    } catch (err) {
+      setError('Erro ao salvar dados do perfil.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -64,13 +127,16 @@ function Profile() {
     setEditData({});
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (window.confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
-      // Aqui você faria a chamada para a API para deletar a conta
-      console.log('Deletando conta...');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login?deleted=1';
+      try {
+        await api.delete('/api/usuarios/me/');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login?deleted=1';
+      } catch (err) {
+        setError('Erro ao excluir conta.');
+      }
     }
   };
 
@@ -83,6 +149,8 @@ function Profile() {
       <Header />
       <div style={{ minHeight: '100vh', background: '#fff' }}>
         <div className="profile-container">
+          {loading && <p>Carregando perfil...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
           {/* Título e botões de ação */}
           <div className="profile-header">
             <h1 className="profile-title">
@@ -92,12 +160,14 @@ function Profile() {
               <button 
                 className="profile-btn profile-btn--edit"
                 onClick={handleEdit}
+                disabled={loading}
               >
                 Editar perfil
               </button>
               <button 
                 className="profile-btn profile-btn--delete"
                 onClick={handleDeleteAccount}
+                disabled={loading}
               >
                 Excluir conta
               </button>
@@ -144,10 +214,10 @@ function Profile() {
                     />
                   </div>
                   <div className="profile-modal-actions">
-                    <button className="profile-btn profile-btn--save" onClick={handleSave}>
-                      Salvar
+                    <button className="profile-btn profile-btn--save" onClick={handleSave} disabled={loading}>
+                      {loading ? 'Salvando...' : 'Salvar'}
                     </button>
-                    <button className="profile-btn profile-btn--cancel" onClick={handleCancel}>
+                    <button className="profile-btn profile-btn--cancel" onClick={handleCancel} disabled={loading}>
                       Cancelar
                     </button>
                   </div>
