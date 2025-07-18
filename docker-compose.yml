@@ -1,0 +1,30 @@
+services:
+  frontend:
+    build:
+      context: .
+      target: prod
+    ports:
+      - "5173:80"
+    container_name: FRONTEND
+
+  frontend-test:
+    build:
+      context: .
+      target: test
+    command: ["npm", "run", "test"]
+    container_name: FRONTEND_TEST
+
+  eslint:
+    build:
+      context: .
+      target: base
+    command: ["npm", "run", "lint"]
+    container_name: ESLINT
+
+  selenium-test:
+    build:
+      context: ./selenium-tests
+    depends_on:
+      - frontend
+    network_mode: host
+    container_name: SELENIUM_TEST 
