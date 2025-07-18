@@ -125,7 +125,7 @@ function Register() {
         }
       });
       navigate('/login?message=Conta criada com sucesso! Faça login para continuar.');
-    } catch (err) {
+    } catch {
       setSubmitError('Erro ao criar conta. Verifique os dados ou tente outro username/email.');
     }
   };

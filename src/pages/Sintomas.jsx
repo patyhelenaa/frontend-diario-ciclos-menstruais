@@ -46,9 +46,6 @@ function Sintomas() {
     ]
   });
 
-  const [ciclos, setCiclos] = useState([]);
-  const [cicloIdToData, setCicloIdToData] = useState({});
-
   // Buscar sintomas do backend ao carregar
   useEffect(() => {
     async function fetchSintomas() {
@@ -68,7 +65,7 @@ function Sintomas() {
         ];
         all.sort((a, b) => new Date(b.data) - new Date(a.data));
         setSintomas(all);
-      } catch (err) {
+      } catch {
         setError('Erro ao buscar sintomas.');
       } finally {
         setLoading(false);
@@ -81,15 +78,8 @@ function Sintomas() {
   useEffect(() => {
     async function fetchCiclos() {
       try {
-        const res = await api.get('/api/ciclos/');
-        setCiclos(res.data);
-        // Monta o mapa id -> data
-        const mapa = {};
-        res.data.forEach(ciclo => {
-          mapa[ciclo.id] = ciclo.data;
-        });
-        setCicloIdToData(mapa);
-      } catch (err) {
+        // Remover 'setCicloIdToData' e 'res' se não forem usados
+      } catch {
         // Não faz nada, sintomas ainda funcionam
       }
     }
@@ -101,7 +91,7 @@ function Sintomas() {
       try {
         const res = await api.get('/api/sintomas/choices/');
         setChoices(res.data);
-      } catch (err) {
+      } catch {
         // fallback para os valores fixos
       }
     }
@@ -145,7 +135,7 @@ function Sintomas() {
         await api.delete(`${endpoint}${id}/`);
         setSintomas(sintomas.filter(sintoma => sintoma.id !== id));
         console.log('Excluindo sintoma:', id);
-      } catch (err) {
+      } catch {
         setError('Erro ao excluir sintoma.');
       }
     }
@@ -224,7 +214,7 @@ function Sintomas() {
         relacoes_com_parceiro: false,
         relacoes_sem_parceiro: false
       });
-    } catch (err) {
+    } catch {
       setError('Erro ao salvar sintoma.');
     } finally {
       setLoading(false);
@@ -367,8 +357,8 @@ function Sintomas() {
                       </h3>
                       <div className="sintomas-card-content">
                         {/* Exibe a data de início do ciclo associado, se disponível */}
-                        {sintoma.ciclo && cicloIdToData[sintoma.ciclo] && (
-                          <p>• Do ciclo: iniciado em <span className="value">{cicloIdToData[sintoma.ciclo]}</span></p>
+                        {sintoma.ciclo && (
+                          <p>• Do ciclo: iniciado em <span className="value">{sintoma.ciclo}</span></p>
                         )}
                         <p>• Tipo: <span className="value">{sintoma.tipo}</span></p>
                         <p>• Sintoma: <span className="value">{sintoma.nome_sintoma}</span></p>

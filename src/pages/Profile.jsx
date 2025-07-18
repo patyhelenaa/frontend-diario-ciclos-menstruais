@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import gotinha from '../assets/gotinha-removebg-preview.png';
 import calendario from '../assets/calendario-removebg-preview.png';
@@ -34,7 +33,7 @@ function Profile() {
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  // Remover 'navigate' se não for usado
 
   useEffect(() => {
     async function fetchProfile() {
@@ -49,7 +48,7 @@ function Profile() {
           data_nascimento: res.data.profile.data_nascimento,
           peso: res.data.profile.peso
         });
-      } catch (err) {
+      } catch {
         setError('Erro ao buscar dados do perfil.');
       } finally {
         setLoading(false);
@@ -87,9 +86,8 @@ function Profile() {
             duracaoMenstruacao: resDuracao.data.duracao_media_menstruacao || '-'
           }
         });
-      } catch (err) {
-        console.log('ERRO AO BUSCAR ESTATÍSTICAS:', err); // <-- debug
-        // Não mostra erro, só não preenche os cards
+      } catch {
+        setError('Erro ao buscar estatísticas.');
       }
     }
     fetchProfile();
@@ -115,8 +113,8 @@ function Profile() {
       });
       setUserData(editData);
       setIsEditing(false);
-    } catch (err) {
-      setError('Erro ao salvar dados do perfil.');
+    } catch {
+      setError('Erro ao atualizar perfil.');
     } finally {
       setLoading(false);
     }
@@ -134,7 +132,7 @@ function Profile() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login?deleted=1';
-      } catch (err) {
+      } catch {
         setError('Erro ao excluir conta.');
       }
     }

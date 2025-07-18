@@ -33,7 +33,7 @@ function Ciclos() {
           fluxo: ciclo.fluxo_menstrual
         }));
         setCiclos(ciclosConvertidos);
-      } catch (err) {
+      } catch {
         setError('Erro ao buscar ciclos.');
       } finally {
         setLoading(false);
@@ -77,7 +77,7 @@ function Ciclos() {
       try {
         await api.delete(`/api/ciclos/${id}/`);
         setCiclos(ciclos.filter(ciclo => ciclo.id !== id));
-      } catch (err) {
+      } catch {
         setError('Erro ao excluir ciclo.');
       }
     }
@@ -114,7 +114,7 @@ function Ciclos() {
         duracaoMenstruacao: '',
         fluxo: 'MODERADO'
       });
-    } catch (err) {
+    } catch {
       setError('Erro ao salvar ciclo.');
     } finally {
       setLoading(false);

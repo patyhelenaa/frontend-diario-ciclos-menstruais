@@ -62,7 +62,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    
     if (username.length < 3) {
       setError('Username deve ter pelo menos 3 caracteres.');
       return;
@@ -71,7 +71,7 @@ function Login() {
       setError('A senha deve ter pelo menos 8 caracteres.');
       return;
     }
-
+    
     try {
       const response = await api.post('/api/login/', {
         username,
@@ -81,8 +81,8 @@ function Login() {
       localStorage.setItem('token', token);
       // (Opcional) Salvar user info se vier na resposta
       navigate('/profile');
-    } catch (err) {
-      setError('Usuário ou senha inválidos.');
+    } catch {
+      setError('Erro ao fazer login.');
     }
   };
 
