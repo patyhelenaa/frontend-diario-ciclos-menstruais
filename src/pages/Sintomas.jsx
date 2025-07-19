@@ -48,31 +48,33 @@ function Sintomas() {
 
   // Buscar sintomas do backend ao carregar
   useEffect(() => {
-    async function fetchSintomas() {
-      setLoading(true);
-      setError('');
-      try {
-        const resFisico = await api.get('/api/fisico/');
-        const resHumor = await api.get('/api/humor/');
-        const resLibido = await api.get('/api/libido/');
-        const resSecrecao = await api.get('/api/secrecao/');
-        // Unifica e ordena por data decrescente
-        const all = [
-          ...resFisico.data.map(s => ({ ...s, tipo: 'Físico' })),
-          ...resHumor.data.map(s => ({ ...s, tipo: 'Humor' })),
-          ...resLibido.data.map(s => ({ ...s, tipo: 'Libido' })),
-          ...resSecrecao.data.map(s => ({ ...s, tipo: 'Secreção' })),
-        ];
-        all.sort((a, b) => new Date(b.data) - new Date(a.data));
-        setSintomas(all);
-      } catch {
-        setError('Erro ao buscar sintomas.');
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchSintomas();
   }, []);
+
+  // Função para buscar sintomas do backend
+  async function fetchSintomas() {
+    setLoading(true);
+    setError('');
+    try {
+      const resFisico = await api.get('/api/fisico/');
+      const resHumor = await api.get('/api/humor/');
+      const resLibido = await api.get('/api/libido/');
+      const resSecrecao = await api.get('/api/secrecao/');
+      // Unifica e ordena por data decrescente
+      const all = [
+        ...resFisico.data.map(s => ({ ...s, tipo: 'Físico' })),
+        ...resHumor.data.map(s => ({ ...s, tipo: 'Humor' })),
+        ...resLibido.data.map(s => ({ ...s, tipo: 'Libido' })),
+        ...resSecrecao.data.map(s => ({ ...s, tipo: 'Secreção' })),
+      ];
+      all.sort((a, b) => new Date(b.data) - new Date(a.data));
+      setSintomas(all);
+    } catch {
+      setError('Erro ao buscar sintomas.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Buscar ciclos do backend ao carregar
   useEffect(() => {
@@ -188,16 +190,8 @@ function Sintomas() {
       } else {
         await api.post(endpoint, { ...base, ...extra });
       }
-      setSintomas(prevSintomas => {
-        const newSintomas = [...prevSintomas];
-        if (editSintomaId) {
-          const index = newSintomas.findIndex(s => s.id === editSintomaId);
-          newSintomas[index] = { ...newSintomas[index], ...base, ...extra };
-        } else {
-          newSintomas.unshift({ ...base, ...extra });
-        }
-        return newSintomas.sort((a, b) => new Date(b.data) - new Date(a.data));
-      });
+      // Após salvar, recarregar sintomas do backend para evitar duplicação
+      await fetchSintomas();
       setShowNewSintomaModal(false);
       setEditSintomaId(null);
       setNewSintomaData({
