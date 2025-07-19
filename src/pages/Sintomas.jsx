@@ -357,8 +357,8 @@ function Sintomas() {
                       </h3>
                       <div className="sintomas-card-content">
                         {/* Exibe a data de início do ciclo associado, se disponível */}
-                        {sintoma.ciclo && (
-                          <p>• Do ciclo: iniciado em <span className="value">{sintoma.ciclo}</span></p>
+                        {sintoma.ciclo_data && (
+                          <p>• Do ciclo: iniciado em <span className="value">{sintoma.ciclo_data}</span></p>
                         )}
                         <p>• Tipo: <span className="value">{sintoma.tipo}</span></p>
                         <p>• Sintoma: <span className="value">{sintoma.nome_sintoma}</span></p>
