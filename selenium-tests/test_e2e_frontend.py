@@ -53,7 +53,7 @@ def test_register_flow(driver):
     username_input = driver.find_element(By.NAME, "username")
     email_input = driver.find_element(By.NAME, "email")
     password_input = driver.find_element(By.NAME, "password")
-    password2_input = driver.find_element(By.NAME, "password2")
+    password2_input = driver.find_element(By.ID, "confirmPassword")
     username_input.send_keys("usuario_selenium")
     email_input.send_keys("selenium@example.com")
     password_input.send_keys("senha1234")
