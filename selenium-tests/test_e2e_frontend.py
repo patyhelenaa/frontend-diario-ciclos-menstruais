@@ -20,17 +20,14 @@ def test_homepage(driver):
     assert "Diário de ciclos Menstruais" in driver.title, f"Título inesperado: {driver.title}"
     print("Título da página OK")
 
-    # Verifica se botão de login existe
-    login_buttons = driver.find_elements(By.XPATH, "//button[contains(text(), 'Login')]")
-    if not login_buttons:
-        print("Botão de login não encontrado (pode estar na página inicial ou em outra rota)")
-    else:
-        print("Botão de login encontrado")
+    # Verifica se o formulário de login está presente
+    assert "Entre em sua conta do diário de ciclos menstruais" in driver.page_source, "Texto de login não encontrado na home."
+    print("Página de login exibida na home OK")
 
 
 def test_login_flow(driver):
-    driver.get(BASE_URL + "/login")
-    assert "Login" in driver.page_source
+    driver.get(BASE_URL)  # Home já é login
+    assert "Entre em sua conta do diário de ciclos menstruais" in driver.page_source, "Página de login não encontrada."
     print("Página de login OK")
 
     # Preenche campos de login (ajuste os nomes dos inputs conforme seu form)
@@ -49,7 +46,7 @@ def test_login_flow(driver):
 
 def test_register_flow(driver):
     driver.get(BASE_URL + "/register")
-    assert "Registrar" in driver.page_source or "Cadastro" in driver.page_source
+    assert "Criar conta" in driver.page_source
     print("Página de cadastro OK")
 
     # Preenche campos de cadastro (ajuste os nomes dos inputs conforme seu form)

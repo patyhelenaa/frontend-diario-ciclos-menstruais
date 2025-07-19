@@ -127,6 +127,7 @@ function Login() {
                   </label>
                   <input
                     id="username"
+                    name="username"
                     className={`login2-input ${usernameError ? 'login2-input--error' : ''}`}
                     type="text"
                     value={username}
@@ -144,6 +145,7 @@ function Login() {
                   <div className="login2-password-wrapper">
                     <input
                       id="senha"
+                      name="password"
                       className={`login2-input ${passwordError ? 'login2-input--error' : ''}`}
                       type={showPassword ? "text" : "password"}
                       value={password}

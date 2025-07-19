@@ -216,7 +216,7 @@ function Register() {
                   <div className="login2-password-wrapper">
                     <input
                       id="confirmPassword"
-                      name="confirmPassword"
+                      name="password2"
                       className={`login2-input ${errors.confirmPassword ? 'login2-input--error' : ''}`}
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
