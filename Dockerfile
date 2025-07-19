@@ -11,6 +11,8 @@ RUN npm run test
 
 # Etapa de build de produção
 FROM base AS build
+# Logar o valor da variável de ambiente no build
+RUN echo "VITE_API_URL=$VITE_API_URL"
 RUN npm run build
 
 # Etapa final: Nginx para servir o build
