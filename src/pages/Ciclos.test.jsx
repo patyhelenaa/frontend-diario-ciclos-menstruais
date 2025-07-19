@@ -1,4 +1,4 @@
-/* eslint-env jest */
+/* eslint-env vitest */
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Ciclos from './Ciclos';
