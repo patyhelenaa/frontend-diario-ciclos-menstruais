@@ -1,5 +1,5 @@
 import React from 'react';
-import assustada from '../assets/assustada-removebg-preview.png';
+import mascotePaginaError from '../assets/mascotePaginaError.png';
 import { useNavigate } from 'react-router-dom';
 
 function ErrorPage({ message }) {
@@ -17,7 +17,7 @@ function ErrorPage({ message }) {
   return (
     <div style={{ minHeight: '100vh', background: '#fff' }}>
       <div className="error-container">
-        <img src={assustada} alt="Mascote assustada" className="error-img" />
+        <img src={mascotePaginaError} alt="Mascote assustada" className="error-img" />
         <div className="error-content">
           <h1 className="error-title">ERROR</h1>
           <h2 className="error-code">404</h2>

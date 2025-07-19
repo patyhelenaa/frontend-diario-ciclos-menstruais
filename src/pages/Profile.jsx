@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
-import gotinha from '../assets/gotinha-removebg-preview.png';
-import calendario from '../assets/calendario-removebg-preview.png';
-import bolinha from '../assets/bolinha-removebg-preview.png';
+import iconUltimoCiclo from '../assets/iconUltimoCiclo.png';
+import iconProximoCiclo from '../assets/iconProximoCiclo.png';
+import iconDuracaoMedia from '../assets/iconDuracaoMedia.png';
 import api from '../services/api';
 
 function Profile() {
@@ -228,7 +228,7 @@ function Profile() {
           <div className="profile-cards">
             {/* Último ciclo */}
             <div className="profile-card">
-              <img src={gotinha} alt="Ícone gotinha" className="profile-card-img" />
+              <img src={iconUltimoCiclo} alt="Ícone gotinha" className="profile-card-img" />
               <h3 className="profile-card-title">Último ciclo</h3>
               <div className="profile-card-content">
                 <p>• Há: <span className="value">{cycleData.ultimoCiclo.diasAtras}</span> dias</p>
@@ -239,7 +239,7 @@ function Profile() {
 
             {/* Previsão próximo ciclo */}
             <div className="profile-card">
-              <img src={calendario} alt="Ícone calendário" className="profile-card-img" />
+              <img src={iconProximoCiclo} alt="Ícone calendário" className="profile-card-img" />
               <h3 className="profile-card-title">Previsão próximo ciclo</h3>
               <div className="profile-card-content">
                 <p>• Em: <span className="value">{cycleData.previsaoProximo.diasParaProximo}</span> dias</p>
@@ -250,7 +250,7 @@ function Profile() {
 
             {/* Duração média */}
             <div className="profile-card">
-              <img src={bolinha} alt="Ícone bolinha" className="profile-card-img" />
+              <img src={iconDuracaoMedia} alt="Ícone bolinha" className="profile-card-img" />
               <h3 className="profile-card-title">Duração média</h3>
               <div className="profile-card-content">
                 <p>• Duração do ciclo: <span className="value">{cycleData.duracaoMedia.duracaoCiclo}</span> dias</p>
