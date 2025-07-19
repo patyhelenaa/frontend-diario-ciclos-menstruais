@@ -100,11 +100,9 @@ function Sintomas() {
     fetchChoices();
   }, []);
 
-  const sintomasPerPage = 3;
-  const totalPages = Math.ceil(sintomas.length / sintomasPerPage);
-  const startIndex = currentPage * sintomasPerPage;
-  const endIndex = startIndex + sintomasPerPage;
-  const currentSintomas = sintomas.slice(startIndex, endIndex);
+  // Remover variáveis e lógica de paginação
+  // Exibir todos os sintomas empilhados
+  const currentSintomas = sintomas;
 
   const handleNextPage = () => {
     if (currentPage < totalPages - 1) {
@@ -325,16 +323,6 @@ function Sintomas() {
             
             {/* Cards de sintomas */}
             <div className="sintomas-cards-container">
-              {/* Seta esquerda */}
-              {currentPage > 0 && (
-                <button 
-                  className="sintomas-nav-btn sintomas-nav-btn--prev"
-                  onClick={handlePrevPage}
-                >
-                  ←
-                </button>
-              )}
-
               {/* Cards */}
               <div className="sintomas-cards">
                 {loading ? (
@@ -351,8 +339,8 @@ function Sintomas() {
                       </h3>
                       <div className="sintomas-card-content">
                         {/* Exibe a data de início do ciclo associado, se disponível */}
-                        {sintoma.ciclo_data && (
-                          <p>• Do ciclo: iniciado em <span className="value">{sintoma.ciclo_data}</span></p>
+                        {sintoma.ciclo && (
+                          <p>• Do ciclo: iniciado em <span className="value">{sintoma.ciclo}</span></p>
                         )}
                         <p>• Tipo: <span className="value">{sintoma.tipo}</span></p>
                         <p>• Sintoma: <span className="value">{sintoma.nome_sintoma}</span></p>
@@ -376,16 +364,6 @@ function Sintomas() {
                   ))
                 )}
               </div>
-
-              {/* Seta direita */}
-              {currentPage < totalPages - 1 && (
-                <button 
-                  className="sintomas-nav-btn sintomas-nav-btn--next"
-                  onClick={handleNextPage}
-                >
-                  →
-                </button>
-              )}
             </div>
           </div>
         </div>
