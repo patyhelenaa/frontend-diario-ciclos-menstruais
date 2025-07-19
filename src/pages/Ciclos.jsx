@@ -3,7 +3,6 @@ import Header from '../components/Header';
 import api from '../services/api';
 
 function Ciclos() {
-  const [currentPage, setCurrentPage] = useState(0);
   const [ciclos, setCiclos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,23 +41,8 @@ function Ciclos() {
     fetchCiclos();
   }, []);
 
-  const ciclosPerPage = 3;
-  const totalPages = Math.ceil(ciclos.length / ciclosPerPage);
-  const startIndex = currentPage * ciclosPerPage;
-  const endIndex = startIndex + ciclosPerPage;
-  const currentCiclos = ciclos.slice(startIndex, endIndex);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  // Exibir todos os ciclos empilhados
+  const currentCiclos = ciclos;
 
   const handleEditCiclo = (id) => {
     const ciclo = ciclos.find(c => c.id === id);
@@ -152,14 +136,6 @@ function Ciclos() {
           <div className="ciclos-section">
             <h2 className="ciclos-section-title">Meus ciclos recentes</h2>
             <div className="ciclos-cards-container">
-              {currentPage > 0 && (
-                <button 
-                  className="ciclos-nav-btn ciclos-nav-btn--prev"
-                  onClick={handlePrevPage}
-                >
-                  ←
-                </button>
-              )}
               <div className="ciclos-cards">
                 {loading ? (
                   <p>Carregando ciclos...</p>
@@ -196,14 +172,6 @@ function Ciclos() {
                   ))
                 )}
               </div>
-              {currentPage < totalPages - 1 && (
-                <button 
-                  className="ciclos-nav-btn ciclos-nav-btn--next"
-                  onClick={handleNextPage}
-                >
-                  →
-                </button>
-              )}
             </div>
           </div>
         </div>
